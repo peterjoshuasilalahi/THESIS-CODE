@@ -1,0 +1,61 @@
+# Install required packages
+install.packages(c("rDEA", "readxl", "openxlsx"))
+
+# Load libraries
+library(rDEA)
+library(readxl)
+library(openxlsx)
+
+# Load data
+data <- read_excel("data.xlsx")
+
+# Define variables
+X <- as.matrix(data[, 3:8])        # Inputs: X1-X6
+Y <- as.matrix(data$Y)             # Output: Y
+Z <- as.matrix(data[, 15:21])      # Environmental variables: Z1-Z7
+
+# Run Simar & Wilson 2007 DEA (rDEA robust DEA with environmental variables)
+result <- dea.env.robust(
+  X = X,
+  Y = Y,
+  Z = Z,
+  model = "input",
+  RTS = "variable",
+  L1 = 500,
+  L2 = 2000,
+  alpha = 0.05
+)
+
+# Compute bias-corrected efficiency scores
+eff_bc <- 1 / result$delta_hat_hat
+
+# Prepare efficiency results table
+efficiency_results <- data.frame(
+  DMU = data$DMU,
+  Efficiency = round(eff_bc, 4)
+)
+
+# Prepare environmental effects table (coefficients and confidence intervals)
+beta_results <- data.frame(
+  Variable = names(result$beta_hat_hat),
+  Coefficient = round(result$beta_hat_hat, 4),
+  CI_Lower = round(result$beta_ci[, 1], 4),
+  CI_Upper = round(result$beta_ci[, 2], 4)
+)
+
+# Create directory "RESULT" if not exists
+output_dir <- "RESULT"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir)
+}
+
+# Export both tables to an Excel file
+write.xlsx(
+  list(
+    "Efficiency_Scores" = efficiency_results,
+    "Environmental_Effects" = beta_results
+  ),
+  file = file.path(output_dir, "SimarWilson_Results.xlsx")
+)
+
+cat("Exported to RESULT/SimarWilson_Results.xlsx\n")
