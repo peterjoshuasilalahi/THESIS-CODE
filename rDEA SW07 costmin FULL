@@ -1,0 +1,73 @@
+# Install required packages
+install.packages(c("rDEA", "readxl", "openxlsx"))
+
+# Load libraries
+library(rDEA)
+library(readxl)
+library(openxlsx)
+
+# Load data
+data <- read_excel("data.xlsx")
+Y = data[c("Y")]
+X = data[c("X1", "X2", "X3", "X4", "X5", "X6")]
+W = data[c("W1", "W2", "W3", "W4", "W5", "W6")]
+Z = data[c("Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7")]
+firms = 1:38
+
+# DEA VRS
+di_naive = dea(XREF=X, YREF=Y, X=X[firms,], Y=Y[firms,], model="input", RTS="variable")
+di_naive$thetaOpt
+
+# Choose model
+## Double Bootstrap - Costmin
+result <- dea.env.robust(X=X, Y=Y, W=W, Z=Z, model = "costmin", RTS="variable")
+### Compute bias-corrected efficiency scores
+eff_bc <- 1 / result$delta_hat_hat
+
+
+## Double Bootstrap
+result <- dea.env.robust(X=X, Y=Y, W=W, Z=Z, model = "input", RTS="variable")
+### Compute bias-corrected efficiency scores
+eff_bc <- 1 / result$delta_hat_hat
+
+# Export
+# 1. Efficiency (bias-corrected)
+eff_bc <- 1 / result$delta_hat_hat
+efficiency_results <- data.frame(DMU = data$DMU, Efficiency = round(eff_bc, 4))
+
+# 2. Environmental effects
+beta_results <- data.frame(
+  Variable = names(result$beta_hat_hat),
+  Coefficient = round(result$beta_hat_hat, 4),
+  CI_Lower = round(result$beta_ci[, 1], 4),
+  CI_Upper = round(result$beta_ci[, 2], 4)
+)
+
+# 3. All other relevant elements
+raw_results <- list(
+  "Efficiency_Scores" = efficiency_results,
+  "Environmental_Effects" = beta_results,
+  "delta_hat" = as.data.frame(result$delta_hat),
+  "delta_hat_hat" = as.data.frame(result$delta_hat_hat),
+  "delta_ci_low" = as.data.frame(result$delta_ci_low),
+  "delta_ci_high" = as.data.frame(result$delta_ci_high),
+  "delta_ci_kneip_low" = as.data.frame(result$delta_ci_kneip_low),
+  "delta_ci_kneip_high" = as.data.frame(result$delta_ci_kneip_high),
+  "bias" = as.data.frame(result$bias),
+  "Z_beta_hat_hat" = as.data.frame(result$Zbeta_hat_hat),
+  "beta_hat_hat" = as.data.frame(t(result$beta_hat_hat)),
+  "sigma_hat_hat" = data.frame(Sigma = result$sigma_hat_hat),
+  "beta_hat_hat_star" = as.data.frame(t(result$beta_hat_hat_star)),
+  "sigma_hat_hat_star" = data.frame(Sigma = result$sigma_hat_hat_star),
+  "beta_CI" = as.data.frame(result$beta_ci),
+  "sigma_CI" = as.data.frame(result$sigma_ci)
+)
+
+# 4. Create directory
+if (!dir.exists("RESULT")) dir.create("RESULT")
+
+# 5. Export semua sheet
+write.xlsx(
+  raw_results,
+  file = file.path("RESULT", "SimarWilson_FULL_Export.xlsx")
+)
