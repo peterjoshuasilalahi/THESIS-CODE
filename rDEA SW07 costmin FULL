@@ -20,13 +20,13 @@ di_naive$thetaOpt
 
 # Choose model
 ## Double Bootstrap - Costmin
-result <- dea.env.robust(X=X, Y=Y, Z=Z, model = "costmin", RTS="variable")
+result <- dea.env.robust(X=X, Y=Y, W=W, Z=Z, model = "costmin", RTS="variable")
 ### Compute bias-corrected efficiency scores
 eff_bc <- 1 / result$delta_hat_hat
 
 
 ## Double Bootstrap
-result <- dea.env.robust(X=X, Y=Y, W=W, Z=Z, model = "input", RTS="variable")
+result <- dea.env.robust(X=X, Y=Y, Z=Z, model = "input", RTS="variable")
 ### Compute bias-corrected efficiency scores
 eff_bc <- 1 / result$delta_hat_hat
 
