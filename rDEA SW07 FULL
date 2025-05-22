@@ -14,18 +14,16 @@ W = data[c("W1", "W2", "W3", "W4", "W5", "W6")]
 Z = data[c("Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7")]
 firms = 1:38
 
-# DEA VRS
-di_naive = dea(XREF=X, YREF=Y, X=X[firms,], Y=Y[firms,], model="input", RTS="variable")
-di_naive$thetaOpt
-
 # Choose model
 ## Double Bootstrap - Costmin
+set.seed(111)
 result <- dea.env.robust(X=X, Y=Y, W=W, Z=Z, model = "costmin", RTS="variable")
 ### Compute bias-corrected efficiency scores
 eff_bc <- 1 / result$delta_hat_hat
 
 
 ## Double Bootstrap
+set.seed(111)
 result <- dea.env.robust(X=X, Y=Y, Z=Z, model = "input", RTS="variable")
 ### Compute bias-corrected efficiency scores
 eff_bc <- 1 / result$delta_hat_hat
